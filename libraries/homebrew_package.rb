@@ -6,6 +6,29 @@ require 'chef/platform'
 require 'chef/mixin/shell_out'
 
 class Chef
+  class Resource
+    class Package
+      class Homebrew < Package
+
+        def initialize(name, run_context=nil)
+          super
+          @cask = false
+          @resource_name = :homebrew
+          @provider = Chef::Provider::Package::Homebrew
+        end
+
+        def cask(arg=nil)
+          set_or_return(
+            :cask,
+            arg,
+            :kind_of => [TrueClass, FalseClass]
+          )
+        end
+
+      end
+    end
+  end
+
   class Provider
     class Package
       class Homebrew < Package
@@ -13,7 +36,7 @@ class Chef
         include Chef::Mixin::ShellOut
 
         def load_current_resource
-          @current_resource = Chef::Resource::Package.new(@new_resource.name)
+          @current_resource = Chef::Resource::Package::Hombrew.new(@new_resource.name)
           @current_resource.package_name(@new_resource.package_name)
           @current_resource.version(current_installed_version)
 
@@ -21,7 +44,9 @@ class Chef
         end
 
         def install_package(name, version)
-          brew('install', @new_resource.options, name)
+          cmd = ['install', @new_resource.options, name]
+          cmd = cmd.insert(0, 'cask') if @new_resource.cask
+          brew(cmd)
         end
 
         def upgrade_package(name, version)
@@ -29,7 +54,9 @@ class Chef
         end
 
         def remove_package(name, version)
-          brew('uninstall', @new_resource.options, name)
+          cmd = ['uninstall', @new_resource.options, name]
+          cmd = cmd.insert(0, 'cask') if @new_resource.cask
+          brew(cmd)
         end
 
         # Homebrew doesn't really have a notion of purging, so just remove.

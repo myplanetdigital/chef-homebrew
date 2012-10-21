@@ -9,3 +9,7 @@ package 'git'
 execute "update homebrew from github" do
   command "/usr/local/bin/brew update || true"
 end
+
+# Install homebrew-cask
+homebrew_tap "phinze/homebrew-cask"
+package "brew-cask"
